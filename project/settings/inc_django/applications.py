@@ -15,7 +15,4 @@ INSTALLED_APPS = [
     'constance',
     'constance.backends.database',
     'apps.user',
-    'apps.city',
-    'apps.weather',
-    'apps.requests_history',
 ]

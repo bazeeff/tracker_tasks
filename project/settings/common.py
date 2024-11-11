@@ -17,7 +17,6 @@ BASE_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 
 ROOT_URLCONF = 'apps.urls'
 
-from .inc_django.api_network import *  # noqa
 # Django settings
 from .inc_django.applications import *  # noqa
 from .inc_django.auth import *  # noqa
