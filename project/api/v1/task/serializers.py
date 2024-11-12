@@ -38,6 +38,23 @@ class TaskReadSerializer(serializers.ModelSerializer):
         return CommentReadSerializer(comments, many=True).data
 
 
+class TaskCompactReadSerializer(serializers.ModelSerializer):
+    creator = UserReadSerializer(read_only=True)
+
+    select_related_fields = ("creator",)
+
+    class Meta:
+        model = Task
+        fields = (
+            "id",
+            "name",
+            "status",
+            "due_date",
+            "creator",
+            "created_at",
+        )
+
+
 class TaskWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task

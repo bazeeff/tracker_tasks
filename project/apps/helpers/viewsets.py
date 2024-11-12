@@ -149,3 +149,15 @@ class LRExtendedModelViewSet(
     viewsets.GenericViewSet,
 ):
     pass
+
+
+class CRUDExtendedModelViewSet(
+    ExtendViewSet,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    pass

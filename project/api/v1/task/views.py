@@ -1,6 +1,7 @@
 from apps.helpers.serializers import EnumSerializer
-from apps.helpers.viewsets import CRDExtendedModelViewSet
+from apps.helpers.viewsets import CRUDExtendedModelViewSet
 from apps.task.models import Task, TaskTypeChoices
+from apps.user.models.user import RoleChoices
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
@@ -12,7 +13,7 @@ from .filters import TaskFilter
 from .serializers import TaskReadSerializer, TaskWriteSerializer
 
 
-class TaskViewSet(CRDExtendedModelViewSet):
+class TaskViewSet(CRUDExtendedModelViewSet):
     """
     retrieve:
     Возвращает информацию о задаче.
@@ -57,3 +58,11 @@ class TaskViewSet(CRDExtendedModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in [RoleChoices.ADMINISTRATOR, RoleChoices.SUPERUSER]:
+            return Task.objects.all()
+        elif user.role == RoleChoices.PERFORMER_TASK:
+            return Task.objects.filter(assignees=user)
+        return Task.objects.none()

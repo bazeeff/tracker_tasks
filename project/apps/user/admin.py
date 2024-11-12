@@ -12,7 +12,10 @@ class UserAdmin(BaseUserAdmin):
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("first_name",)}),
         (_("Contact info"), {"fields": ("email",)}),
-        (_("Permissions"), {"fields": ("is_active", "is_staff", "is_superuser")}),
+        (
+            _("Permissions"),
+            {"fields": ("is_active", "is_staff", "is_superuser", "role")},
+        ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
     add_fieldsets = (
@@ -32,7 +35,7 @@ class UserAdmin(BaseUserAdmin):
 
     list_display = (
         "first_name",
-        "email",  # Исправлено здесь
+        "email",
     )
 
     readonly_fields = ("last_login", "date_joined")

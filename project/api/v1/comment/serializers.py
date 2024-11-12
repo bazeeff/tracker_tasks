@@ -1,9 +1,13 @@
+from api.v1.user.serializers import UserReadSerializer
 from apps.comment.models import Comment
-from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 
 class CommentReadSerializer(serializers.ModelSerializer):
+    author = UserReadSerializer()
+
+    select_related_fields = ("author",)
+
     class Meta:
         model = Comment
         fields = (
@@ -21,6 +25,5 @@ class CommentWriteSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "text",
-            "author",
             "task",
         )

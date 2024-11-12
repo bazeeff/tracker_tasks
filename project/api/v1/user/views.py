@@ -1,100 +1,90 @@
-import logging
-
-from apps.helpers import exceptions
-from apps.helpers.batchmixin import DeleteBatchMixin
-from apps.helpers.custom_error import CustomValidationError
-from apps.helpers.exceptions import ErrorResponseSerializer
-from apps.helpers.viewsets import CRUExtendedModelViewSet
+from api.v1.user.serializers import (
+    UserCompactSerializer,
+    UserReadSerializer,
+    UserRegistrationSerializer,
+    UserWriteSerializer,
+)
+from apps.helpers import exceptions, viewsets
+from apps.helpers.permissions import (
+    IsAdministratorOrSuperUser,
+    IsPerformerTaskUser,
+    IsSuperUser,
+)
+from apps.helpers.serializers import EnumSerializer
 from apps.user.managers import UserManager
-from apps.user.models import User
-from django.contrib.auth import get_user_model
-from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import authentication, permissions, status
+from apps.user.models.user import RoleChoices
+from django.contrib.auth import logout
+from django.core.exceptions import ObjectDoesNotExist
+from drf_yasg.utils import no_body, swagger_auto_schema
+from rest_framework import authentication, decorators, permissions, status
 from rest_framework.decorators import action
-from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework_simplejwt import authentication as authentication_jwt
 from rest_framework_simplejwt import serializers as jwt_serializers
 from rest_framework_simplejwt import views
 
-from . import serializers
-from .filters import UserFilterSet
-from .serializers import UserReadSerializer, UserRegistrationSerializer
 
-User = get_user_model()
-logger = logging.getLogger()
-
-
-class UserViewSet(
-    views.TokenViewBase, CRUExtendedModelViewSet, DeleteBatchMixin
-):  # noqa: WPS338 WPS214
-    queryset = User.objects.all()
-    serializer_class = serializers.UserReadSerializer
+class AuthViewSet(
+    viewsets.RUDExtendedModelViewSet, views.TokenViewBase
+):  # noqa: WPS214
+    serializer_class = UserReadSerializer
     serializer_class_map = {
-        "list": serializers.UserReadSerializer,
-        "retrieve": serializers.UserReadSerializer,
-        "me": serializers.UserReadSerializer,
         "login": jwt_serializers.TokenObtainPairSerializer,
         "refresh": jwt_serializers.TokenRefreshSerializer,
-        "change_password": serializers.UserChangePasswordSerializer,
-        "compact": serializers.UserCompactSerializer,
-        "registration": serializers.UserRegistrationSerializer,
-        "update": serializers.UserUpdateSerializer,
-        "partial_update": serializers.UserUpdateSerializer,
-    }
-    permission_map = {
-        "login": permissions.AllowAny,
-        "registration": permissions.AllowAny,
+        "registration": UserRegistrationSerializer,
     }
     permission_classes = (permissions.IsAuthenticated,)
+    permission_map = {
+        "login": permissions.AllowAny,
+        "refresh": permissions.AllowAny,
+        "registration": permissions.AllowAny,
+    }
     authentication_classes = (
         authentication_jwt.JWTAuthentication,
         authentication.SessionAuthentication,
     )
-    filterset_class = UserFilterSet
-    filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
 
     default_responses = {
-        200: serializers.UserLoginResponseSerializer,
-        400: ErrorResponseSerializer,
-        410: ErrorResponseSerializer,
+        400: exceptions.ErrorResponseSerializer,
+        410: exceptions.ErrorResponseSerializer,
     }
 
-    def get_queryset(self):
+    def get_queryset(self):  # noqa: WPS615
         user = self.request.user
+        queryset = UserManager().get_queryset(user)
         if not user.is_authenticated:
-            return User.objects.none()
+            return queryset.none()
 
-        return UserManager().get_queryset(user)
-
-    def _auth(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        token = serializer.object.get("token")
-        return Response({"token": token})
-
-    @swagger_auto_schema(
-        request_body=serializers.LoginSerializer,
-        responses={status.HTTP_200_OK: jwt_serializers.TokenObtainPairSerializer},
-    )
-    @action(methods=["post"], detail=False)
-    def login(self, request):
-        if not User.objects.filter(email=request.data["email"]).exists():
-            raise CustomValidationError(
-                {"detail": "Не найдено", "code": "not_found"},
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-        serializer = serializers.LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return super().post(request)  # noqa: WPS61311
+        return queryset
 
     @swagger_auto_schema(
         responses={status.HTTP_200_OK: jwt_serializers.TokenObtainPairSerializer}
     )
-    @action(methods=["post"], detail=False)
-    def refresh(self, request):
+    @decorators.action(methods=["post"], detail=False)
+    def login(self, request):
         return super().post(request)  # noqa: WPS613
+
+    @swagger_auto_schema(
+        responses={status.HTTP_200_OK: jwt_serializers.TokenObtainPairSerializer}
+    )
+    @decorators.action(methods=["post"], detail=False)
+    def refresh(self, request):
+        """Обновление токена."""
+        return super().post(request)  # noqa: WPS613
+
+    @swagger_auto_schema(
+        request_body=no_body, responses={status.HTTP_200_OK: "No content"}
+    )
+    @decorators.action(methods=["post"], detail=False)
+    def logout(self, request):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, ObjectDoesNotExist):
+            pass  # noqa: WPS420
+
+        logout(request)
+        return Response(status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=UserRegistrationSerializer,
@@ -105,37 +95,95 @@ class UserViewSet(
     )
     @action(methods=["post"], detail=False)
     def registration(self, request):
-        """Register user."""
+        """Регистрация пользователя."""
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        data = serializers.UserReadSerializer(
+        data = UserReadSerializer(
             instance=user, context=self.get_serializer_context()
         ).data  # noqa: WPS110
         return Response(data, status=status.HTTP_201_CREATED)
 
-    @action(methods=["get"], detail=False)
+
+class UserViewSet(AuthViewSet):  # noqa: WPS214
+    serializer_class = UserReadSerializer
+    serializer_class_map = {
+        **AuthViewSet.serializer_class_map,
+        "list": UserReadSerializer,
+        "retrieve": UserReadSerializer,
+        "me": UserReadSerializer,
+        "create": UserWriteSerializer,
+        "compact": UserCompactSerializer,
+        "update": UserWriteSerializer,
+        "partial_update": UserWriteSerializer,
+    }
+    permission_classes = (permissions.IsAuthenticated,)
+    permission_map = {
+        **AuthViewSet.permission_map,
+        "create": (IsSuperUser,),
+        "list": (IsAdministratorOrSuperUser,),
+        "retrieve": (IsAdministratorOrSuperUser,),
+        "destroy": (IsAdministratorOrSuperUser,),
+        "password_reset": (
+            IsAdministratorOrSuperUser,
+            IsSuperUser,
+            IsPerformerTaskUser,
+        ),
+    }
+
+    search_fields = ("first_name",)
+    ordering_fields = ("first_name",)
+
+    default_responses = {
+        400: exceptions.ErrorResponseSerializer,
+        410: exceptions.ErrorResponseSerializer,
+    }
+
+    def get_queryset(self):  # noqa: WPS615
+        user = self.request.user
+        queryset = UserManager().get_queryset(user)
+        if not user.is_authenticated:
+            return queryset.none()
+
+        return queryset
+
+    @decorators.action(methods=["get"], detail=False)
     def me(self, request, **kwargs):
-        """Retrieve logged user information."""
+        """Получение информации о залогинненом юзере."""
         serializer = self.get_serializer(instance=request.user)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        responses={
-            200: serializers.UserChangePasswordSerializer,
-            400: ErrorResponseSerializer,
-        }
-    )
-    @action(methods=["post"], detail=False, url_path="change-password")
-    def change_password(self, request):
-        """Change password."""
-        serializer = self.get_serializer(data=request.data, instance=request.user)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        data = serializers.UserReadSerializer(instance=user).data  # noqa: WPS110
-        return Response(data)
-
-    @action(methods=["get"], detail=False)
+    @decorators.action(methods=["get"], detail=False)
     def compact(self, request):
         """List compact user."""
         return super().list(request)  # noqa: WPS613
+
+    @swagger_auto_schema(
+        request_body=UserWriteSerializer,
+        responses={
+            200: UserReadSerializer,
+            400: exceptions.ErrorResponseSerializer,
+        },
+    )
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)  # noqa:  WPS204
+        user = serializer.save()
+        data = UserReadSerializer(
+            instance=user, context=self.get_serializer_context()
+        ).data  # noqa: WPS110
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    @swagger_auto_schema(responses={200: EnumSerializer})
+    @action(methods=["get"], detail=False)
+    def role(self, request):
+        """Возвращает возможные роли"""
+        return Response(EnumSerializer(RoleChoices, many=True).data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user == instance:
+            raise ValidationError("Нельзя удалить собственную учетную запись")
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

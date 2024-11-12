@@ -1,5 +1,7 @@
 from apps.helpers.registration_validators import username_validator
+from apps.helpers.serializers import EnumField
 from apps.user.models import User
+from apps.user.models.user import RoleChoices
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -16,12 +18,15 @@ class UserCompactSerializer(serializers.ModelSerializer):
 
 
 class UserReadSerializer(serializers.ModelSerializer):
+    role = EnumField(enum_class=RoleChoices)
+
     class Meta:
         model = User
         fields = (
             "id",
             "first_name",
             "email",
+            "role",
         )
 
 
@@ -114,6 +119,8 @@ class UserRegistrationSerializer(serializers.Serializer):
         fields = ("id", "first_name", "email", "password", "password2")
 
     def validate(self, attrs):
+        if User.objects.filter(email=attrs["email"]).first():
+            raise ValidationError("Пользователь с таким email уже существует")
         if len(attrs["password"]) < 8:
             raise ValidationError({"password": ["Длина пароля меньше 8 символов"]})
 
@@ -131,7 +138,6 @@ class UserRegistrationSerializer(serializers.Serializer):
         return user
 
 
-# dw
 class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())]
