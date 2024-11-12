@@ -30,14 +30,14 @@ def exception_handler(exc, context):
 
     if response is not None:
         data = {  # noqa: WPS110
-            'status_code': exc.status_code,
-            'errors': {},
+            "status_code": exc.status_code,
+            "errors": {},
         }
         if isinstance(exc.detail, list):
-            data['errors'] = exc.detail
+            data["errors"] = exc.detail
         elif isinstance(exc.detail, dict):
-            data['errors'] = exc.detail
+            data["errors"] = exc.detail
         else:
-            data['errors'] = exc.detail
+            data["errors"] = exc.detail
         response.data = data
     return response

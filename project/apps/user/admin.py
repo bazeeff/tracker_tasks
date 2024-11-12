@@ -5,30 +5,34 @@ from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Personal info'), {'fields': ('first_name',)}),
-        (_('Contact info'), {'fields': ('email',)}),
-        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser')}),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": ("first_name",)}),
+        (_("Contact info"), {"fields": ("email",)}),
+        (_("Permissions"), {"fields": ("is_active", "is_staff", "is_superuser")}),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': (
-                'first_name',
-                'email',
-                'password1',
-                'password2',
-            ),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "first_name",
+                    "email",
+                    "password1",
+                    "password2",
+                ),
+            },
+        ),
     )
 
     list_display = (
-        'first_name',
-        'email',  # Исправлено здесь
+        "first_name",
+        "email",  # Исправлено здесь
     )
 
-    readonly_fields = ('last_login', 'date_joined')
+    readonly_fields = ("last_login", "date_joined")

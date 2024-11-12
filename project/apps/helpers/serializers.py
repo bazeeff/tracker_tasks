@@ -3,7 +3,6 @@ from rest_framework import serializers
 
 
 class EagerLoadingSerializerMixin:
-
     select_related_fields = []
     prefetch_related_fields = []
 
@@ -22,7 +21,7 @@ class EmptySerializer(serializers.Serializer):
 
 class EnumSerializer(serializers.Serializer):
     value = serializers.CharField()  # noqa: WPS110
-    name = serializers.CharField(source='label')
+    name = serializers.CharField(source="label")
 
 
 class EnumField(serializers.ChoiceField):
@@ -31,16 +30,16 @@ class EnumField(serializers.ChoiceField):
 
     def __init__(self, enum_class, *args, **kwargs):  # noqa: D107
         EnumField.Meta.swagger_schema_fields = {
-            'type': openapi.TYPE_OBJECT,
-            'title': 'Type',
-            'properties': {
-                'name': openapi.Schema(
-                    title='Email subject',
+            "type": openapi.TYPE_OBJECT,
+            "title": "Type",
+            "properties": {
+                "name": openapi.Schema(
+                    title="Email subject",
                     type=openapi.TYPE_STRING,
                     enum=enum_class.labels,
                 ),
-                'value': openapi.Schema(
-                    title='Значение',
+                "value": openapi.Schema(
+                    title="Значение",
                     type=openapi.TYPE_STRING,
                     enum=enum_class.values,
                 ),
@@ -60,7 +59,9 @@ class DeleteBatchRequestSerializer(serializers.Serializer):
 class DeleteBatchSerializer(serializers.Serializer):
     def get_fields(self):
         fields = super().get_fields()
-        fields['items'] = serializers.PrimaryKeyRelatedField(queryset=self.context['queryset'], many=True)
+        fields["items"] = serializers.PrimaryKeyRelatedField(
+            queryset=self.context["queryset"], many=True
+        )
         return fields
 
 
@@ -73,15 +74,15 @@ class CompanyAdminsSerializer(serializers.Serializer):
 class RichTextUploadingFieldSerializer(serializers.Field):
     """Сериализатор подменяет относительный путь на абсолютный для картинок ckeditor."""
 
-    pattern = 'src=\"/media/ckeditor_uploads/'
+    pattern = 'src="/media/ckeditor_uploads/'
 
     def to_representation(self, text):
-        request = self.context.get('request')
+        request = self.context.get("request")
 
         if not request:
             return text
 
-        scheme = 'https' if request.is_secure() else 'http'
-        host = f'{scheme}://{request.get_host()}'
-        replaced = f'src=\"{host}/media/ckeditor_uploads/'
+        scheme = "https" if request.is_secure() else "http"
+        host = f"{scheme}://{request.get_host()}"
+        replaced = f'src="{host}/media/ckeditor_uploads/'
         return text.replace(self.pattern, replaced)

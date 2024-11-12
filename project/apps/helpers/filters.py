@@ -14,4 +14,6 @@ class ListFilter(Filter):
     def filter(self, queryset, value):  # noqa: WPS110
         if value in EMPTY_VALUES:
             return queryset
-        return super().filter(queryset, [item.strip() for item in value.split(',')])  # noqa: WPS221 WPS110
+        return super().filter(
+            queryset, [item.strip() for item in value.split(",")]
+        )  # noqa: WPS221 WPS110

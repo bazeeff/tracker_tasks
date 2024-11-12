@@ -6,8 +6,6 @@ from ..common import BASE_DIR
 
 USE_I18N = True
 USE_L10N = True
-LANGUAGE_CODE = 'ru'
-LANGUAGES = (
-    ('ru', _('Russian')),
-)
-LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale/')]
+LANGUAGE_CODE = "ru"
+LANGUAGES = (("ru", _("Russian")),)
+LOCALE_PATHS = [os.path.join(BASE_DIR, "locale/")]

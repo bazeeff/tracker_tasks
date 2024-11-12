@@ -4,7 +4,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 
-def paginate_response(viewset, queryset=None, serializer_class=None, context=None, add_context=None):
+def paginate_response(
+    viewset, queryset=None, serializer_class=None, context=None, add_context=None
+):
     if queryset is None:
         queryset = viewset.filter_queryset(viewset.get_queryset())
 
@@ -32,22 +34,26 @@ class ExtendViewSet:
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        serializer_class = self.get_serializer_class()(self.action, self.serializer_class)
-        if hasattr(serializer_class, 'setup_eager_loading'):
+        serializer_class = self.get_serializer_class()(
+            self.action, self.serializer_class
+        )
+        if hasattr(serializer_class, "setup_eager_loading"):
             queryset = serializer_class.setup_eager_loading(queryset)
         return queryset
 
     def get_serializer_class(self):
-        self.serializer_class = self.serializer_class_map.get(self.action, self.serializer_class)
+        self.serializer_class = self.serializer_class_map.get(
+            self.action, self.serializer_class
+        )
         return super().get_serializer_class()
 
     def initialize_request(self, request, *args, **kwargs):
         request = super().initialize_request(request, *args, **kwargs)
         throttle_scope = self.throttle_scope_map.get(self.action, None)
         throttle_class = self.throttle_class_map.get(self.action, None)
-        cls_throttle_scope = getattr(self, 'throttle_scope', None)
-        cls_throttle = getattr(self, 'throttle_classes', None)
-        self.throttle_scope = throttle_scope or cls_throttle_scope or ''
+        cls_throttle_scope = getattr(self, "throttle_scope", None)
+        cls_throttle = getattr(self, "throttle_classes", None)
+        self.throttle_scope = throttle_scope or cls_throttle_scope or ""
         self.throttle_classes = throttle_class or cls_throttle
         return request
 
@@ -117,6 +123,7 @@ class ListExtendedModelViewSet(
 ):
     pass
 
+
 class CExtendedModelViewSet(
     ExtendViewSet,
     mixins.CreateModelMixin,
@@ -133,6 +140,7 @@ class CRExtendedModelViewSet(
     viewsets.GenericViewSet,
 ):
     pass
+
 
 class LRExtendedModelViewSet(
     ExtendViewSet,

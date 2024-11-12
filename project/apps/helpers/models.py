@@ -41,21 +41,23 @@ class ForceCleanModel(models.Model):
 
 
 class UUIDModel(models.Model):
-    id = models.UUIDField(_('ID'), default=uuid.uuid4, primary_key=True, editable=False)
+    id = models.UUIDField(_("ID"), default=uuid.uuid4, primary_key=True, editable=False)
 
     class Meta:
         abstract = True
 
 
 class CreatedModel(models.Model):
-    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
 
     class Meta:
         abstract = True
 
 
 class DeletedModel(models.Model):
-    deleted_at = models.DateTimeField(_('deleted at'), db_index=True, null=True, blank=True, editable=False)
+    deleted_at = models.DateTimeField(
+        _("deleted at"), db_index=True, null=True, blank=True, editable=False
+    )
 
     objects = DeletedManager()  # noqa: WPS110
 
@@ -71,7 +73,9 @@ class DeletedModel(models.Model):
 
 
 class UserDeletedModel(models.Model):
-    deleted_at = models.DateTimeField(_('deleted at'), db_index=True, null=True, blank=True, editable=False)
+    deleted_at = models.DateTimeField(
+        _("deleted at"), db_index=True, null=True, blank=True, editable=False
+    )
 
     objects = UserDeletedManager()  # noqa: WPS110
 
@@ -87,8 +91,8 @@ class UserDeletedModel(models.Model):
 
 
 class FilterTypes(models.TextChoices):
-    GENERAL = 'general', 'общая'
-    ACTUAL = 'actual', 'актуальная'
+    GENERAL = "general", "общая"
+    ACTUAL = "actual", "актуальная"
 
 
 def enum_max_length(text_choices: Type[models.Choices]) -> int:

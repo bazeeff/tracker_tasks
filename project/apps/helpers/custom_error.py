@@ -4,7 +4,7 @@ from rest_framework.exceptions import APIException, _get_error_details  # noqa: 
 
 class CustomValidationError(APIException):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    default_detail = 'A server error occurred.'
+    default_detail = "A server error occurred."
 
     def __init__(self, detail, status_code):  # noqa: D107
         if status_code is not None:

@@ -11,7 +11,9 @@ class CeleryTaskWrapper:
         self.task = task
 
     def execute(self, request):
-        serializer = self.body_serializer(data=request.data, context={'request': request})
+        serializer = self.body_serializer(
+            data=request.data, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
 
         result = self.task.delay(**serializer.data)  # noqa: WPS110
