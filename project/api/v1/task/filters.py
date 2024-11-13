@@ -1,5 +1,5 @@
 from apps.task.models import Task, TaskTypeChoices
-from django_filters import ChoiceFilter, FilterSet
+from django_filters import ChoiceFilter, FilterSet, CharFilter
 
 
 class TaskFilter(FilterSet):
@@ -11,3 +11,4 @@ class TaskFilter(FilterSet):
     """
 
     status = ChoiceFilter(choices=TaskTypeChoices.choices)
+    name = CharFilter(field_name="name", lookup_expr="icontains")

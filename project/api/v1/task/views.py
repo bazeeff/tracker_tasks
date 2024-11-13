@@ -20,8 +20,8 @@ class TaskViewSet(CRUDExtendedModelViewSet):
 
     list:
     Возвращает список всех задач.
-    /api/v1/task/?status=    возвращает список проектов по статусу
-    /api/v1/task/?search=    поиск по названию проекта, имени участника проекта
+    /api/v1/task/?status=    возвращает список задач по статусу
+    /api/v1/task/?name=     возвращает список задач по имени
 
     create:
     Создает новую задачу.
